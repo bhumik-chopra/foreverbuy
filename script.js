@@ -69,6 +69,9 @@ function route() {
 
   if (hash in pages) {
     showPage(hash);
+    if (hash === "cart") {
+      updateCartDisplay();
+    }
     window.scrollTo({ top: 0, behavior: "instant" });
   } else {
     showPage("home");
@@ -168,12 +171,6 @@ document.addEventListener("change", (e) => {
   if (!t) return;
 
   if (t.matches('input[data-filter-cat], input[data-filter-type], #sortSelect')) {
-    applyFiltersAndRender(currentSearchQuery);
-  }
-});
-
-window.addEventListener("hashchange", () => {
-  if ((location.hash || "#home") === "#collection") {
     applyFiltersAndRender(currentSearchQuery);
   }
 });
