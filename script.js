@@ -86,6 +86,11 @@ function productCardHTML(p) {
         <img src="${p.image}" class="pc-img" alt="${p.name}">
         <div class="pc-name">${p.name}</div>
         <div class="pc-price">$${p.price}</div>
+        <div class="pc-controls">
+          <button class="pc-qty-btn minus" data-product-id="${p.id}" type="button">−</button>
+          <input type="number" class="pc-qty-input" value="1" min="1" data-product-id="${p.id}" readonly>
+          <button class="pc-qty-btn plus" data-product-id="${p.id}" type="button">+</button>
+        </div>
         <button class="pc-add-btn" data-product-id="${p.id}">ADD TO CART</button>
       </div>
     </div>
@@ -177,7 +182,11 @@ const form = document.getElementById("newsletterForm");
 if (form) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    alert("Subscribed successfully!");
+    const notification = document.createElement("div");
+    notification.className = "cart-notification";
+    notification.innerHTML = '<i class="fa-solid fa-check"></i> Subscribed successfully!';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2500);
     form.reset();
   });
 }
@@ -185,24 +194,125 @@ if (form) {
 // Add to Cart functionality
 let cart = [];
 
+function getQuantityForProduct(productId) {
+  const input = document.querySelector(`.pc-qty-input[data-product-id="${productId}"]`);
+  return input ? parseInt(input.value) : 1;
+}
+
 document.addEventListener("click", (e) => {
+  const productId = parseInt(e.target.getAttribute("data-product-id"));
+  
+  if (e.target.matches(".pc-qty-btn.plus")) {
+    const input = document.querySelector(`.pc-qty-input[data-product-id="${productId}"]`);
+    if (input) input.value = parseInt(input.value) + 1;
+  }
+  
+  if (e.target.matches(".pc-qty-btn.minus")) {
+    const input = document.querySelector(`.pc-qty-input[data-product-id="${productId}"]`);
+    if (input && parseInt(input.value) > 1) input.value = parseInt(input.value) - 1;
+  }
+  
   if (e.target.matches(".pc-add-btn")) {
-    const productId = parseInt(e.target.getAttribute("data-product-id"));
+    const qty = getQuantityForProduct(productId);
     const product = PRODUCTS.find(p => p.id === productId);
     
     if (product) {
-      cart.push(product);
+      const existingItem = cart.find(item => item.product.id === productId);
+      if (existingItem) {
+        existingItem.quantity += qty;
+      } else {
+        cart.push({ product, quantity: qty });
+      }
       updateCartCount();
-      alert(`${product.name} added to cart!`);
+      showCartNotification(product.name, qty);
+      const input = document.querySelector(`.pc-qty-input[data-product-id="${productId}"]`);
+      if (input) input.value = 1;
     }
+  }
+  
+  if (e.target.matches(".remove-cart-btn")) {
+    const index = parseInt(e.target.getAttribute("data-index"));
+    cart.splice(index, 1);
+    updateCartDisplay();
+  }
+  
+  if (e.target.matches(".cart-qty-plus")) {
+    const index = parseInt(e.target.getAttribute("data-index"));
+    if (cart[index]) cart[index].quantity++;
+    updateCartDisplay();
+  }
+  
+  if (e.target.matches(".cart-qty-minus")) {
+    const index = parseInt(e.target.getAttribute("data-index"));
+    if (cart[index] && cart[index].quantity > 1) cart[index].quantity--;
+    updateCartDisplay();
   }
 });
 
+function showCartNotification(productName, qty) {
+  const notification = document.createElement("div");
+  notification.className = "cart-notification";
+  notification.innerHTML = `<i class="fa-solid fa-check"></i> Added ${qty} item${qty > 1 ? 's' : ''} to cart`;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 2500);
+}
+
 function updateCartCount() {
   if (cartCountEl) {
-    cartCountEl.textContent = cart.length;
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    cartCountEl.textContent = totalItems;
   }
 }
+
+function updateCartDisplay() {
+  const container = document.getElementById("cartItemsContainer");
+  const subtotalEl = document.getElementById("cartSubtotal");
+  const totalEl = document.getElementById("cartTotal");
+  
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = '<p class="empty-cart-msg">Your cart is empty</p>';
+    if (subtotalEl) subtotalEl.textContent = "$ 0.00";
+    if (totalEl) totalEl.textContent = "$ 10.00";
+    updateCartCount();
+    return;
+  }
+
+  let subtotal = 0;
+  container.innerHTML = cart.map((item, idx) => {
+    const lineTotal = item.product.price * item.quantity;
+    subtotal += lineTotal;
+    return `
+      <div class="cart-item">
+        <img src="${item.product.image}" alt="${item.product.name}" class="cart-item-img">
+        <div class="cart-item-details">
+          <div class="cart-item-name">${item.product.name}</div>
+          <div class="cart-item-price">$${item.product.price} x ${item.quantity} = <span class="line-total">$${lineTotal.toFixed(2)}</span></div>
+          <div class="cart-item-qty-control">
+            <button class="cart-qty-minus" data-index="${idx}" type="button">−</button>
+            <span class="cart-qty-display">${item.quantity}</span>
+            <button class="cart-qty-plus" data-index="${idx}" type="button">+</button>
+          </div>
+        </div>
+        <button class="remove-cart-btn" data-index="${idx}" type="button">×</button>
+      </div>
+    `;
+  }).join("");
+
+  if (subtotalEl) subtotalEl.textContent = `$ ${subtotal.toFixed(2)}`;
+  if (totalEl) totalEl.textContent = `$ ${(subtotal + 10).toFixed(2)}`;
+  updateCartCount();
+}
+
+window.addEventListener("hashchange", () => {
+  if ((location.hash || "#home") === "#cart") {
+    updateCartDisplay();
+  }
+  if ((location.hash || "#home") === "#collection") {
+    applyFiltersAndRender(currentSearchQuery);
+  }
+});
 
 renderHomeProducts();
 applyFiltersAndRender("");
