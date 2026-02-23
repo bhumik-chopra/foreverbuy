@@ -86,6 +86,7 @@ function productCardHTML(p) {
         <img src="${p.image}" class="pc-img" alt="${p.name}">
         <div class="pc-name">${p.name}</div>
         <div class="pc-price">$${p.price}</div>
+        <button class="pc-add-btn" data-product-id="${p.id}">ADD TO CART</button>
       </div>
     </div>
   `;
@@ -179,6 +180,28 @@ if (form) {
     alert("Subscribed successfully!");
     form.reset();
   });
+}
+
+// Add to Cart functionality
+let cart = [];
+
+document.addEventListener("click", (e) => {
+  if (e.target.matches(".pc-add-btn")) {
+    const productId = parseInt(e.target.getAttribute("data-product-id"));
+    const product = PRODUCTS.find(p => p.id === productId);
+    
+    if (product) {
+      cart.push(product);
+      updateCartCount();
+      alert(`${product.name} added to cart!`);
+    }
+  }
+});
+
+function updateCartCount() {
+  if (cartCountEl) {
+    cartCountEl.textContent = cart.length;
+  }
 }
 
 renderHomeProducts();

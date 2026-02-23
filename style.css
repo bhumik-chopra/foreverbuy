@@ -271,6 +271,25 @@ body{
 .pc-name{ margin-top: 12px; font-size: 18px; }
 .pc-price{ margin-top: 6px; font-size: 18px; font-weight: 700; }
 
+.pc-add-btn{
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pc-add-btn:hover{
+  background: #111;
+  color: #fff;
+}
+
 .search-info{
   margin-top: 14px;
   color: #6b7280;
